@@ -22,5 +22,4 @@ func Download(toFile, url string) error {
 
 	_, err = io.Copy(f, resp.Body)
 	return err
-        // test
 }

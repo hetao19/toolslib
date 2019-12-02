@@ -14,7 +14,7 @@ func SelfPath() string {
 	return path
 }
 
-// get absolute filepath, based on built executable file
+// RealPath get absolute filepath, based on built executable file
 func RealPath(fp string) (string, error) {
 	if path.IsAbs(fp) {
 		return fp, nil
@@ -24,20 +24,21 @@ func RealPath(fp string) (string, error) {
 }
 
 // SelfDir gets compiled executable file directory
-func SeflDir() string {
+func SelfDir() string {
 	return filepath.Dir(SelfPath())
 }
 
-// get filepath base name
+// Basename get filepath base name
 func Basename(fp string) string {
 	return path.Base(fp)
 }
 
-// get filepath dir name
+// Dir get filepath dir name
 func Dir(fp string) string {
 	return path.Dir(fp)
 }
 
+// InsureDir ...
 func InsureDir(fp string) error {
 	if IsExist(fp) {
 		return nil
@@ -70,12 +71,17 @@ func EnsureDirRW(dataDir string) error {
 	return nil
 }
 
-// remove one file
+// Create  one file
+func Create(name string) (*os.File, error) {
+	return os.Create(name)
+}
+
+// Remove one file
 func Remove(name string) error {
 	return os.Remove(name)
 }
 
-// close fd
+// Close fd
 func Close(fd *os.File) error {
 	return fd.Close()
 }
@@ -91,5 +97,22 @@ func Rename(src string, target string) error {
 
 // delete file
 func Unlink(fp string) error {
-	return os.Rename(src, target)
+	return os.Remove(fp)
+}
+
+// IsFile checks whether the path is a file.
+// it returns false when it's a directory or does not exist.
+func IsFile(fp string) bool {
+	f, e := os.Stat(fp)
+	if e != nil {
+		return false
+	}
+	return !f.IsDir()
+}
+
+// IsExist checks whether a file or directory exists.
+// It returns false when the file or directory does not exist.
+func IsExist(fp string) bool {
+	_, err := os.Stat(fp)
+	return err == nil || os.IsExist(err)
 }
