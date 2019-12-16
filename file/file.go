@@ -2,9 +2,12 @@ package file
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -95,7 +98,7 @@ func Rename(src string, target string) error {
 	return os.Rename(src, target)
 }
 
-// delete file
+// Unlink file
 func Unlink(fp string) error {
 	return os.Remove(fp)
 }
@@ -115,4 +118,102 @@ func IsFile(fp string) bool {
 func IsExist(fp string) bool {
 	_, err := os.Stat(fp)
 	return err == nil || os.IsExist(err)
+}
+
+// Search a file in paths
+// this is often used in search config file in /etc ~/
+func SearchFile(filename string, paths ...string) (fullPath string, err error) {
+	for _, path := range paths {
+		if fullPath = filepath.Join(path, filename); IsExist(fullPath) {
+			return
+		}
+	}
+	err = fmt.Errorf("%s not found in paths", fullPath)
+	return
+}
+
+// get file modified time
+func FileMTime(fp string) (int64, error) {
+	f, err := os.Stat(fp)
+	if err != nil {
+		return 0, err
+	}
+	return f.ModTime().Unix(), nil
+}
+
+// get file size as how many bytes
+func FileSize(fp string) (int64, error) {
+	f, err := os.Stat(fp)
+	if err != nil {
+		return 0, err
+	}
+	return f.Size(), nil
+}
+
+// list dirs under dirPath
+func DirUnder(dirPath string) ([]string, error) {
+	if !IsExist(dirPath) {
+		return []string{}, nil
+	}
+
+	fs, err := ioutil.ReadDir(dirPath)
+	if err != nil {
+		return []string{}, err
+	}
+
+	sz := len(fs)
+	if sz == 0 {
+		return []string{}, nil
+	}
+
+	ret := make([]string, 0, sz)
+	for i := 0; i < sz; i++ {
+		if fs[i].IsDir() {
+			name := fs[i].Name()
+			if name != "." && name != ".." {
+				ret = append(ret, name)
+			}
+		}
+	}
+	return ret, nil
+}
+
+// list files under dirPath
+func FileUnder(dirPath string) ([]string, error) {
+	if !IsExist(dirPath) {
+		return []string{}, nil
+	}
+
+	fs, err := ioutil.ReadDir(dirPath)
+	if err != nil {
+		return []string{}, err
+	}
+
+	sz := len(fs)
+	if sz == 0 {
+		return []string{}, nil
+	}
+
+	ret := make([]string, 0, sz)
+	for i := 0; i < sz; i++ {
+		if !fs[i].IsDir() {
+			ret = append(ret, fs[i].Name())
+		}
+	}
+	return ret, nil
+}
+
+func MustOpenLogFile(fp string) *os.File {
+	if strings.Contains(fp, "/") {
+		dir := Dir(fp)
+		err := EnsureDir(dir)
+		if err != nil {
+			log.Fatalf("mkdir -p %s occur error %v", dir, err)
+		}
+	}
+	f, err := os.OpenFile(fp, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("open %s occur err %v", fp, err)
+	}
+	return f
 }
