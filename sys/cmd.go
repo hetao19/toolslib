@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func CmdOut(name string, arg ...string) (out string, err error) {
+func CmdOut(name string, arg ...string) (string, error) {
 	cmd := exec.Command(name, arg...)
 	var out bytes.Buffer
 	cmd.Stdout = &out
